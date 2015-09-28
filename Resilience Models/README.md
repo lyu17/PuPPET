@@ -1,5 +1,0 @@
-Aspen
-=====
-
-Aspen modeling language
-
