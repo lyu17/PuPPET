@@ -1,0 +1,195 @@
+
+------------------- Syntax Trees ---------------------
+
+----- Main Application Model -----
+App model sscp:
+   Globals:
+      Identifier imgWidth = 
+         Int: 57018
+      Identifier imgHeight = 
+         Int: 57018
+      Identifier upSampledImgH = 
+         Binary Op *
+            LHS
+               Ident: imgHeight
+            RHS
+               Int: 2
+      Identifier upSampledImgW = 
+         Binary Op *
+            LHS
+               Ident: imgWidth
+            RHS
+               Int: 2
+      Identifier tilingFactor = 
+         Int: 32
+      Identifier numTiles = 
+         Binary Op ^
+            LHS
+               Ident: tilingFactor
+            RHS
+               Int: 2
+      Identifier wordSize = 
+         Int: 8
+      Identifier imgSize = 
+         Binary Op *
+            LHS
+               Binary Op *
+                  LHS
+                     Ident: imgWidth
+                  RHS
+                     Ident: imgHeight
+            RHS
+               Ident: wordSize
+      Identifier upSampledImgSize = 
+         Binary Op *
+            LHS
+               Binary Op *
+                  LHS
+                     Ident: upSampledImgW
+                  RHS
+                     Ident: upSampledImgH
+            RHS
+               Ident: wordSize
+      Identifier pulsesPerImage = 
+         Int: 96763
+      Identifier pulsesPerSecond = 
+         Int: 2809
+      Identifier samplesPerPulse = 
+         Int: 80636
+      Identifier pulsesAfterSpotlight = 
+         Binary Op /
+            LHS
+               Ident: pulsesPerSecond
+            RHS
+               Ident: tilingFactor
+      Identifier samplesPerTF = 
+         Binary Op /
+            LHS
+               Ident: samplesPerPulse
+            RHS
+               Ident: tilingFactor
+      Identifier registrationPoints = 
+         Int: 928799
+      Identifier regNeighborhood = 
+         Int: 31
+      Identifier regNeighborhoodR = 
+         Int: 16
+      Identifier ccdNeighborhood = 
+         Int: 5
+      Identifier cfarNeighborhood = 
+         Int: 25
+      Identifier alarmRate = 
+         Real: 0.5
+      Data backProjectBuffer:
+         As:
+            Call Array with 2 args:
+               Int: 35
+               Binary Op /
+                  LHS
+                     Ident: upSampledImgSize
+                  RHS
+                     Int: 35
+      Data accumBufferA:
+         As:
+            Call Matrix with 3 args:
+               Ident: upSampledImgW
+               Ident: upSampledImgH
+               Ident: wordSize
+      Data accumBufferB:
+         As:
+            Call Matrix with 3 args:
+               Ident: upSampledImgW
+               Ident: upSampledImgH
+               Ident: wordSize
+      Data imgRingBuffer:
+         As:
+            Call Array with 2 args:
+               Int: 35
+               Ident: upSampledImgSize
+      Identifier orbitTime = 
+         Int: 15
+      Data orbitSet:
+         As:
+            Call Array with 2 args:
+               Binary Op *
+                  LHS
+                     Ident: orbitTime
+                  RHS
+                     Int: 60
+               Ident: imgSize
+      Import digitalSpotlight from ''digispot.aspen'' with 5 args:
+         Identifier tilingFactor = 
+            Ident: tilingFactor
+         Identifier pulsesPerSecond = 
+            Ident: pulsesPerSecond
+         Identifier pulsesAfterSpotlight = 
+            Ident: pulsesAfterSpotlight
+         Identifier samplesPerPulse = 
+            Ident: samplesPerPulse
+         Identifier wordSize = 
+            Ident: wordSize
+      Import backprojection from ''backprojection.aspen'' with 5 args:
+         Identifier imgWidth = 
+            Ident: upSampledImgW
+         Identifier imgHeight = 
+            Ident: upSampledImgH
+         Identifier wordSize = 
+            Ident: wordSize
+         Identifier tilingFactor = 
+            Ident: tilingFactor
+         Identifier pulsesPerSecond = 
+            Ident: pulsesPerSecond
+      Import registration from ''registration.aspen'' with 6 args:
+         Identifier nControlPoints = 
+            Ident: registrationPoints
+         Identifier neighborhood = 
+            Ident: regNeighborhood
+         Identifier neighborhoodRange = 
+            Ident: regNeighborhoodR
+         Identifier wordSize = 
+            Ident: wordSize
+         Identifier imgWidth = 
+            Ident: upSampledImgW
+         Identifier imgHeight = 
+            Ident: upSampledImgH
+      Import ccd from ''ccd.aspen'' with 4 args:
+         Identifier tileEdge = 
+            Ident: ccdNeighborhood
+         Identifier imgWidth = 
+            Ident: imgWidth
+         Identifier imgHeight = 
+            Ident: imgHeight
+         Identifier wordSize = 
+            Ident: wordSize
+      Import cfar from ''cfar.aspen'' with 5 args:
+         Identifier ccdNeighborhood = 
+            Ident: ccdNeighborhood
+         Identifier cfarNeighborhood = 
+            Ident: cfarNeighborhood
+         Identifier imgWidth = 
+            Ident: imgWidth
+         Identifier imgHeight = 
+            Ident: imgHeight
+         Identifier alarmRate = 
+            Ident: alarmRate
+   Kernels:
+      Kernel main:
+         Statements:
+            Control node '103': map:
+               Quantity:
+                  Ident: numTiles
+               Control node '102': sequential:
+                  Control node '100': kernel call main in module digitalSpotlight
+                  Control node '101': kernel call main in module backprojection
+            Control node '104': kernel call main in module registration
+            Control node '105': kernel call main in module ccd
+            Control node '106': kernel call main in module cfar
+
+-----------------------------------------------------
+
+
+ ------  Application Analysis ------
+>> Basic control flow expression
+flops    = (ccd.main + cfar.main + (numTiles*(digitalSpotlight.main + backprojection.main)) + registration.main)
+
+>> Raw expression without variable expansion:

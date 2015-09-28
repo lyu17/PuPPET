@@ -1,0 +1,14 @@
+model xfer
+{
+  // How many megaflops
+  // so range is from 1MB to 1TB, default 1GB
+  param n = 1024 in 1 .. 1024*1024
+
+  kernel main
+  {
+    execute
+    {
+      intracomm [n*mega] as copyin
+    }
+  }
+}

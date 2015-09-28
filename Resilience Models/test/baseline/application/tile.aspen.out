@@ -1,0 +1,380 @@
+
+------------------- Syntax Trees ---------------------
+
+----- Main Application Model -----
+App model imageFormation:
+   Globals:
+      Identifier wordSize = 
+         Int: 4
+      Identifier complexWordSize = 
+         Int: 8
+      Identifier pulsesPerImage = 
+         Int: 96763
+      Identifier samplesPerPulse = 
+         Int: 80636
+      Identifier bpRangeUpsampling = 
+         Int: 4
+      Identifier pixelsPerSide = 
+         Int: 114036
+      Identifier prf = 
+         Range:
+            Default value:
+               Int: 2809
+            Minimum value:
+               Int: 2000
+            Maximum value:
+               Int: 4000
+      Identifier sincInterpPoints = 
+         Int: 17
+      Identifier dataInputRate = 
+         Binary Op *
+            LHS
+               Binary Op *
+                  LHS
+                     Ident: prf
+                  RHS
+                     Ident: samplesPerPulse
+            RHS
+               Ident: wordSize
+      Identifier pixelsPerImage = 
+         Binary Op *
+            LHS
+               Ident: pixelsPerSide
+            RHS
+               Ident: pixelsPerSide
+      Identifier imageSize = 
+         Binary Op *
+            LHS
+               Ident: pixelsPerImage
+            RHS
+               Ident: wordSize
+      Identifier sinCos = 
+         Int: 18
+      Identifier tf = 
+         Range:
+            Default value:
+               Int: 32
+            Minimum value:
+               Int: 16
+            Maximum value:
+               Int: 64
+      Identifier tfi = 
+         Call floor with 1 args:
+            Ident: tf
+      Identifier dsPulsesPerSec = 
+         Call ceil with 1 args:
+            Binary Op /
+               LHS
+                  Ident: prf
+               RHS
+                  Ident: tfi
+      Identifier dsSamplesPerPulse = 
+         Call ceil with 1 args:
+            Binary Op /
+               LHS
+                  Ident: samplesPerPulse
+               RHS
+                  Ident: tfi
+      Import fft1d from ''1D_FFT.aspen'' with 2 args:
+         Identifier numberOfFFTs = 
+            Ident: prf
+         Identifier n = 
+            Ident: samplesPerPulse
+   Kernels:
+      Kernel phaseShift:
+         Statements:
+            Execution Block (control node '100')
+               Parallelism:
+                  Ident: prf
+               Requires loads of quantity: 
+                  Binary Op +
+                     LHS
+                        Binary Op *
+                           LHS
+                              Int: 3
+                           RHS
+                              Ident: wordSize
+                     RHS
+                        Binary Op *
+                           LHS
+                              Ident: samplesPerPulse
+                           RHS
+                              Binary Op +
+                                 LHS
+                                    Ident: wordSize
+                                 RHS
+                                    Ident: complexWordSize
+               Requires flops of quantity: 
+                  Binary Op +
+                     LHS
+                        Int: 8
+                     RHS
+                        Int: 1
+                  As simd
+               Requires flops of quantity: 
+                  Int: 1
+                  As simd
+                  As sqrt
+               Requires flops of quantity: 
+                  Binary Op *
+                     LHS
+                        Ident: samplesPerPulse
+                     RHS
+                        Binary Op +
+                           LHS
+                              Int: 2
+                           RHS
+                              Ident: sinCos
+                  As simd
+               Requires flops of quantity: 
+                  Ident: samplesPerPulse
+                  As simd
+                  As complex
+               Requires stores of quantity: 
+                  Binary Op *
+                     LHS
+                        Ident: samplesPerPulse
+                     RHS
+                        Ident: complexWordSize
+      Kernel sincInterp:
+         Statements:
+            Execution Block (control node '101')
+               Parallelism:
+                  Binary Op *
+                     LHS
+                        Ident: dsPulsesPerSec
+                     RHS
+                        Ident: dsSamplesPerPulse
+               Requires loads of quantity: 
+                  Binary Op *
+                     LHS
+                        Ident: sincInterpPoints
+                     RHS
+                        Binary Op +
+                           LHS
+                              Ident: wordSize
+                           RHS
+                              Ident: complexWordSize
+               Requires flops of quantity: 
+                  Binary Op +
+                     LHS
+                        Binary Op *
+                           LHS
+                              Ident: sincInterpPoints
+                           RHS
+                              Binary Op +
+                                 LHS
+                                    Int: 3
+                                 RHS
+                                    Int: 4
+                     RHS
+                        Int: 2
+                  As simd
+               Requires flops of quantity: 
+                  Ident: sincInterpPoints
+                  As sincos
+               Requires stores of quantity: 
+                  Binary Op *
+                     LHS
+                        Ident: sincInterpPoints
+                     RHS
+                        Ident: complexWordSize
+      Kernel backprojection:
+         Statements:
+            Execution Block (control node '102')
+               Parallelism:
+                  Ident: pixelsPerImage
+               Requires loads of quantity: 
+                  Binary Op +
+                     LHS
+                        Int: 3
+                     RHS
+                        Binary Op *
+                           LHS
+                              Binary Op *
+                                 LHS
+                                    Ident: dsPulsesPerSec
+                                 RHS
+                                    Int: 3
+                           RHS
+                              Ident: wordSize
+               Requires loads of quantity: 
+                  Binary Op *
+                     LHS
+                        Binary Op *
+                           LHS
+                              Ident: dsPulsesPerSec
+                           RHS
+                              Ident: complexWordSize
+                     RHS
+                        Int: 2
+               Requires flops of quantity: 
+                  Binary Op *
+                     LHS
+                        Ident: dsPulsesPerSec
+                     RHS
+                        Int: 8
+                  As simd
+               Requires flops of quantity: 
+                  Ident: dsPulsesPerSec
+                  As simd
+                  As sqrt
+               Requires flops of quantity: 
+                  Binary Op *
+                     LHS
+                        Ident: dsPulsesPerSec
+                     RHS
+                        Binary Op +
+                           LHS
+                              Binary Op +
+                                 LHS
+                                    Int: 14
+                                 RHS
+                                    Ident: sinCos
+                           RHS
+                              Int: 2
+                  As simd
+               Requires flops of quantity: 
+                  Ident: dsPulsesPerSec
+                  As simd
+                  As complex
+               Requires stores of quantity: 
+                  Ident: complexWordSize
+      Kernel main:
+         Statements:
+            Control node '107': map:
+               Quantity:
+                  Binary Op *
+                     LHS
+                        Ident: tfi
+                     RHS
+                        Ident: tfi
+               Control node '106': sequential:
+                  Control node '103': kernel call main in module fft1d
+                  Control node '104': kernel call phaseShift
+                  Control node '105': kernel call sincInterp
+            Control node '108': kernel call backprojection
+
+-----------------------------------------------------
+
+
+ ------  Application Analysis ------
+>> Basic control flow expression
+flops    = (tfi * tfi * ((fft1d.main + phaseShift + sincInterp))) + backprojection
+
+>> Raw expression without variable expansion:
+flops    = (tfi*tfi)*((prf*(((5*samplesPerPulse)*(log(samplesPerPulse)/log(2)))*0.8) + prf*((((8 + 1) + 1) + samplesPerPulse*(2 + sinCos)) + samplesPerPulse)) + (dsPulsesPerSec*dsSamplesPerPulse)*((sincInterpPoints*(3 + 4) + 2) + sincInterpPoints)) + pixelsPerImage*(((dsPulsesPerSec*8 + dsPulsesPerSec) + dsPulsesPerSec*((14 + sinCos) + 2)) + dsPulsesPerSec)
+messages = (tfi*tfi)*((0 + 0) + 0) + 0
+loads    = (tfi*tfi)*((prf*(((samplesPerPulse*8)*6.3)*max(1, (log(samplesPerPulse*8)) / (log(24*1e+06)))) + prf*(3*wordSize + samplesPerPulse*(wordSize + complexWordSize))) + (dsPulsesPerSec*dsSamplesPerPulse)*(sincInterpPoints*(wordSize + complexWordSize))) + pixelsPerImage*((3 + (dsPulsesPerSec*3)*wordSize) + (dsPulsesPerSec*complexWordSize)*2)
+stores   = (tfi*tfi)*((0 + prf*(samplesPerPulse*complexWordSize)) + (dsPulsesPerSec*dsSamplesPerPulse)*(sincInterpPoints*complexWordSize)) + pixelsPerImage*complexWordSize
+
+>> Raw expression with variable expansion:
+flops    = (floor(32)*floor(32))*((2809*(((5*80636)*(log(80636)/log(2)))*0.8) + 2809*((((8 + 1) + 1) + 80636*(2 + 18)) + 80636)) + (ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*((17*(3 + 4) + 2) + 17)) + (114036*114036)*(((ceil(2809 / (floor(32)))*8 + ceil(2809 / (floor(32)))) + ceil(2809 / (floor(32)))*((14 + 18) + 2)) + ceil(2809 / (floor(32))))
+messages = (floor(32)*floor(32))*((0 + 0) + 0) + 0
+loads    = (floor(32)*floor(32))*((2809*(((80636*8)*6.3)*max(1, (log(80636*8)) / (log(24*1e+06)))) + 2809*(3*4 + 80636*(4 + 8))) + (ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*(17*(4 + 8))) + (114036*114036)*((3 + (ceil(2809 / (floor(32)))*3)*4) + (ceil(2809 / (floor(32)))*8)*2)
+stores   = (floor(32)*floor(32))*((0 + 2809*(80636*8)) + (ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*(17*8)) + (114036*114036)*8
+
+>> as values, With parameters using default values
+flops    = 7.03763e+13
+messages = 0
+loads    = 4.6601e+13
+stores   = 1.99046e+12
+
+>> Simplification test:
+flops (noexp)       = (tfi*tfi)*((prf*(((5*samplesPerPulse)*(log(samplesPerPulse)/log(2)))*0.8) + prf*((((8 + 1) + 1) + samplesPerPulse*(2 + sinCos)) + samplesPerPulse)) + (dsPulsesPerSec*dsSamplesPerPulse)*((sincInterpPoints*(3 + 4) + 2) + sincInterpPoints)) + pixelsPerImage*(((dsPulsesPerSec*8 + dsPulsesPerSec) + dsPulsesPerSec*((14 + sinCos) + 2)) + dsPulsesPerSec)
+flops (noexp,simpl) = (tfi * tfi * ((((dsPulsesPerSec * dsSamplesPerPulse * ((2 + (sincInterpPoints*8))))) + (prf*(10 + (samplesPerPulse*(((((log(samplesPerPulse)/log(2))) * 4)) + 3 + sinCos))))))) + (pixelsPerImage * dsPulsesPerSec * ((sinCos + 26)))
+flops (exp)         = (floor(32)*floor(32))*((2809*(((5*80636)*(log(80636)/log(2)))*0.8) + 2809*((((8 + 1) + 1) + 80636*(2 + 18)) + 80636)) + (ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*((17*(3 + 4) + 2) + 17)) + (114036*114036)*(((ceil(2809 / (floor(32)))*8 + ceil(2809 / (floor(32)))) + ceil(2809 / (floor(32)))*((14 + 18) + 2)) + ceil(2809 / (floor(32))))
+flops (exp,simpl)   = 7.03763e+13
+
+There are 2 parameters with ranges.
+>> with parameter ''prf'' set to its minimum of 2000:
+flops    = 6.46184e+13
+messages = 0
+loads    = 4.24326e+13
+stores   = 1.45606e+12
+
+-> and now with ''prf'' set to its maximum of 4000:
+flops    = 7.88531e+13
+messages = 0
+loads    = 5.27375e+13
+stores   = 2.7772e+12
+
+>> Expression with parameter ''prf'' left as a variable (named x) (and simplified):
+flops = (((3.06029e+07 + (x*6.95055e+06))) * 1024) + 5.03523e+13
+
+>> with parameter ''tf'' set to its minimum of 16:
+flops    = 7.03763e+13
+messages = 0
+loads    = 4.6601e+13
+stores   = 1.99046e+12
+
+-> and now with ''tf'' set to its maximum of 64:
+flops    = 7.03763e+13
+messages = 0
+loads    = 4.6601e+13
+stores   = 1.99046e+12
+
+>> Expression with parameter ''tf'' left as a variable (named x) (and simplified):
+flops = 7.03763e+13
+
+
+
+
+>> Kernel phaseShift
+
+Raw flops for kernel 'phaseShift' = 4.75667e+09
+Raw loads for kernel 'phaseShift' = 2.71811e+09
+Raw stores for kernel 'phaseShift' = 1.81205e+09
+
+Exclusive set size is 0
+Inclusive set size is 0
+
+Calculating flops/byte intensity for kernel 'phaseShift':
+  = (prf*((((8 + 1) + 1) + samplesPerPulse*(2 + sinCos)) + samplesPerPulse)) / (prf*((3*wordSize + samplesPerPulse*(wordSize + complexWordSize)) + samplesPerPulse*complexWordSize))
+  expanding, but in terms of x:
+  = (2809*((((8 + 1) + 1) + 80636*(2 + 18)) + 80636)) / (2809*((3*4 + 80636*(4 + 8)) + 80636*8))
+
+
+>> Kernel sincInterp
+
+Raw flops for kernel 'sincInterp' = 3.06029e+07
+Raw loads for kernel 'sincInterp' = 4.5239e+07
+Raw stores for kernel 'sincInterp' = 3.01594e+07
+
+Exclusive set size is 0
+Inclusive set size is 0
+
+Calculating flops/byte intensity for kernel 'sincInterp':
+  = ((dsPulsesPerSec*dsSamplesPerPulse)*((sincInterpPoints*(3 + 4) + 2) + sincInterpPoints)) / ((dsPulsesPerSec*dsSamplesPerPulse)*(sincInterpPoints*(wordSize + complexWordSize) + sincInterpPoints*complexWordSize))
+  expanding, but in terms of x:
+  = ((ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*((17*(3 + 4) + 2) + 17)) / ((ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*(17*(4 + 8) + 17*8))
+
+
+>> Kernel backprojection
+
+Raw flops for kernel 'backprojection' = 5.03523e+13
+Raw loads for kernel 'backprojection' = 3.20814e+13
+Raw stores for kernel 'backprojection' = 1.04034e+11
+
+Exclusive set size is 0
+Inclusive set size is 0
+
+Calculating flops/byte intensity for kernel 'backprojection':
+  = (pixelsPerImage*(((dsPulsesPerSec*8 + dsPulsesPerSec) + dsPulsesPerSec*((14 + sinCos) + 2)) + dsPulsesPerSec)) / (pixelsPerImage*(((3 + (dsPulsesPerSec*3)*wordSize) + (dsPulsesPerSec*complexWordSize)*2) + complexWordSize))
+  expanding, but in terms of x:
+  = ((114036*114036)*(((ceil(2809 / (floor(32)))*8 + ceil(2809 / (floor(32)))) + ceil(2809 / (floor(32)))*((14 + 18) + 2)) + ceil(2809 / (floor(32))))) / ((114036*114036)*(((3 + (ceil(2809 / (floor(32)))*3)*4) + (ceil(2809 / (floor(32)))*8)*2) + 8))
+
+
+>> Kernel main
+
+Raw flops for kernel 'main' = 7.03763e+13
+Raw loads for kernel 'main' = 4.6601e+13
+Raw stores for kernel 'main' = 1.99046e+12
+
+Exclusive set size is 0
+Inclusive set size is 0
+
+Calculating flops/byte intensity for kernel 'main':
+  = ((tfi*tfi)*((prf*(((5*samplesPerPulse)*(log(samplesPerPulse)/log(2)))*0.8) + prf*((((8 + 1) + 1) + samplesPerPulse*(2 + sinCos)) + samplesPerPulse)) + (dsPulsesPerSec*dsSamplesPerPulse)*((sincInterpPoints*(3 + 4) + 2) + sincInterpPoints)) + pixelsPerImage*(((dsPulsesPerSec*8 + dsPulsesPerSec) + dsPulsesPerSec*((14 + sinCos) + 2)) + dsPulsesPerSec)) / ((tfi*tfi)*((prf*(((samplesPerPulse*8)*6.3)*max(1, (log(samplesPerPulse*8)) / (log(24*1e+06)))) + prf*((3*wordSize + samplesPerPulse*(wordSize + complexWordSize)) + samplesPerPulse*complexWordSize)) + (dsPulsesPerSec*dsSamplesPerPulse)*(sincInterpPoints*(wordSize + complexWordSize) + sincInterpPoints*complexWordSize)) + pixelsPerImage*(((3 + (dsPulsesPerSec*3)*wordSize) + (dsPulsesPerSec*complexWordSize)*2) + complexWordSize))
+  expanding, but in terms of x:
+  = ((floor(32)*floor(32))*((2809*(((5*80636)*(log(80636)/log(2)))*0.8) + 2809*((((8 + 1) + 1) + 80636*(2 + 18)) + 80636)) + (ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*((17*(3 + 4) + 2) + 17)) + (114036*114036)*(((ceil(2809 / (floor(32)))*8 + ceil(2809 / (floor(32)))) + ceil(2809 / (floor(32)))*((14 + 18) + 2)) + ceil(2809 / (floor(32))))) / ((floor(32)*floor(32))*((2809*(((80636*8)*6.3)*max(1, (log(80636*8)) / (log(24*1e+06)))) + 2809*((3*4 + 80636*(4 + 8)) + 80636*8)) + (ceil(2809 / (floor(32)))*ceil(80636 / (floor(32))))*(17*(4 + 8) + 17*8)) + (114036*114036)*(((3 + (ceil(2809 / (floor(32)))*3)*4) + (ceil(2809 / (floor(32)))*8)*2) + 8))

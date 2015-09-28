@@ -1,0 +1,17 @@
+diffs.sh
+tkdiffs.sh
+results.txt
+rebaseline.sh
+bigtest
+dual_tradeoff
+export
+kernelmemusageexclusive
+kernelmemusageinclusive
+parsestring
+resourcecount
+resourcematch
+roofline
+runtime
+singlemapmemusage
+smallmodeltest
+tradeoff

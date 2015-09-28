@@ -1,0 +1,109 @@
+
+----- Parsed Application Model -----
+App model simple:
+   Globals:
+      Identifier value = 
+         Int: 1
+   Kernels:
+      Kernel main:
+         Statements:
+            Execution Block (control node '100')
+               Requires flops of quantity: 
+                  Int: 20
+               Requires loads of quantity: 
+                  Int: 10
+
+----- Parsed Machine Model -----
+Machine model:
+   Globals:
+   Components:
+      Core 'mycore':
+         Resource 'flops' (arg=num) quantity=
+            Binary Op /
+               LHS
+                  Ident: num
+               RHS
+                  Real: 1e+12
+            Traits: none
+            Static power: undefined
+            Dynamic power: undefined
+      Memory 'mymem':
+         Resource 'loads' (arg=bytes) quantity=
+            Binary Op +
+               LHS
+                  Binary Op *
+                     LHS
+                        Int: 70
+                     RHS
+                        Real: 1e-09
+               RHS
+                  Binary Op /
+                     LHS
+                        Ident: bytes
+                     RHS
+                        Binary Op *
+                           LHS
+                              Int: 32
+                           RHS
+                              Real: 1e+09
+            Traits: none
+            Static power: undefined
+            Dynamic power: undefined
+         Resource 'stores' (arg=bytes) quantity=
+            Binary Op +
+               LHS
+                  Binary Op *
+                     LHS
+                        Int: 70
+                     RHS
+                        Real: 1e-09
+               RHS
+                  Binary Op /
+                     LHS
+                        Ident: bytes
+                     RHS
+                        Binary Op *
+                           LHS
+                              Int: 32
+                           RHS
+                              Real: 1e+09
+            Traits: none
+            Static power: undefined
+            Dynamic power: undefined
+         Conflict: loads,stores
+      Cache 'mycache':
+         Property 'capacity'=
+            Binary Op *
+               LHS
+                  Int: 16
+               RHS
+                  Real: 1000
+      Link 'mybus':
+         Resource 'intracomm' (arg=bytes) quantity=
+            Binary Op /
+               LHS
+                  Ident: bytes
+               RHS
+                  Binary Op *
+                     LHS
+                        Int: 12
+                     RHS
+                        Real: 1e+09
+            Traits: none
+            Static power: undefined
+            Dynamic power: undefined
+      Socket 'mysocket'
+         Cores: type=mycore' quantity=
+            Int: 1
+         Memory: type=mymem
+         Cache: type=mycache private=true
+         Link: type=mybus
+         Static power: undefined
+         Dynamic power: undefined
+      Node 'mynode'
+         Socket type='mysocket' quantity=
+            Int: 1
+      Machine 'simple'
+         Nodes: type='mynode' quantity=
+            Int: 1
+         Interconnect: none

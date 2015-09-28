@@ -1,0 +1,107 @@
+model CoEVP
+{
+  param numTimeSteps = 10
+
+  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------------------
+  kernel C1_integrate_coarse_scale
+  {
+    K1_init_kinematic
+    K2_integrate_kinematic
+    K3_compute_pressure
+    K4_solve_stretch_tensor
+    K7_compute_cauchy_stress
+  }
+
+  kernel C2_deviatoric_cauchy_stress
+  {
+  }
+
+  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------------------
+  kernel K1_init_kinematic
+  {
+    // initialize kinematic quantities
+  }
+  kernel K2_integrate_kinematic
+  {
+    // integrate kinematic system to t[n+1]
+  }
+  kernel K3_compute_pressure
+  {
+    // compute pressure p[n+1]
+  }
+  kernel K4_solve_stretch_tensor
+  {
+    // solve for new stretch tensor V'[n+1] via Newton iteration
+    iterate [unknown]
+    {
+      K5_residual_and_jacobian
+      K6_solve_jacobian
+    }
+  }
+  kernel K5_residual_and_jacobian
+  {
+    // Evaluate the Newton residual and Jacobian at the current Newton iterate V'(k)[n+1]
+    F1_compute_fine_scale
+  }
+  kernel K6_solve_jacobian
+  {
+    // Solve the Jacobian system for the Newton correction delta_V'(k)[n+1]
+  }
+  kernel K7_compute_cauchy_stress
+  {
+    // Compute Cauchy stress delta'[n+1]
+  }
+
+  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------------------
+  kernel F1_compute_fine_scale
+  {
+    // Compute the fine-scale response f_y, its tau' derivative and update H={g}
+    F2_query_models
+
+    if (mode == BUILTIN)
+    {
+      F3_interpolate_models
+    }
+    else
+    {
+      F4_vpfft
+    }
+
+    F5_update_models
+    F6_evaluate_derivative
+  }
+  kernel F2_query_models
+  {
+    // Query database for k nearest neighbor interpolation models
+  }
+  kernel F3_interpolate_models
+  {
+    // Use models to interpolate query, derivatives, and compute error estimate
+  }
+  kernel F4_vpfft
+  {
+    // Execute VPFFT
+  }
+  kernel F5_update_models
+  {
+    // Update existing or create new interpolation model
+  }
+  kernel F6_evaluate_derivative
+  {
+    // Evaluate interpolation model for derivative
+  }
+
+  // ----------------------------------------------------------------------
+  // ----------------------------------------------------------------------
+  kernel main()
+  {
+    iterate [numTimeSteps]
+    {
+      C1_integrate_coarse_scale
+      C2_deviatoric_cauchy_stress
+    }
+  }
+}

@@ -1,0 +1,29 @@
+// Machine Model for Keeneland Initial Delivery System (KIDS)
+param klNodes = 120
+param klJoulesPerByte = 20 * nano
+
+// Machine TODOs:
+// Add pstate syntax: 
+// pstate stateName [static = 200W, fpClock = 100mhz, joulesPerFlop = 23] 
+
+include memory/ddr3_1066.aspen
+include interconnects/qdrInfiniband.aspen
+include sockets/intel_xeon_x5660.aspen
+include sockets/nvidia_m2090.aspen
+
+machine Keeneland {
+  // Properties
+  [klNodes] sl390 nodes
+  qdrInfiniband interconnect as fatTree
+  //derived property bisectionBW //< TODO: uncomment this
+  
+  // Resources
+  resource bbw(msgVolume) [msgVolume / bisectionBW]
+    dynamic power [msgVolume * klJoulesPerByte]
+}
+
+node sl390 {
+   [2] intel_xeon_x5660 sockets
+   [3] nvidia_m2090 sockets 
+}
+

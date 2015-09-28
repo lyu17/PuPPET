@@ -1,0 +1,23 @@
+// Machine Model for a Fermi-Only Cluster
+param fcNodes = 1
+
+param fcJoulesPerByte = 20 * nano
+
+include interconnects/qdrInfiniband.aspen
+include sockets/nvidia_m2090.aspen
+
+machine fermiCluster {
+  // Properties
+  [fcNodes] genericFermi nodes
+  qdrInfiniband interconnect as fatTree
+  //derived property bisectionBW //< TODO: uncomment this
+  
+  // Resources
+  resource bbw(msgVolume) [msgVolume / bisectionBW]
+    dynamic power [msgVolume * fcJoulesPerByte]
+}
+
+node genericFermi {
+   [1] nvidia_m2090 sockets 
+}
+
